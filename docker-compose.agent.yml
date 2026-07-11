@@ -1,0 +1,30 @@
+# docker-compose.agent.yml
+# Use with: docker compose -f docker-compose.yml -f docker-compose.agent.yml up
+#
+# This adds a containerized agent that monitors /monitored inside the container.
+# Mount your host directory into /monitored.
+
+version: "3.9"
+
+services:
+  securefim-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: securefim-agent
+    environment:
+      - SECUREFIM_SERVER=http://securefim-server:8443
+      - AGENT_HEARTBEAT_INTERVAL=30
+      - AGENT_BATCH_INTERVAL=5
+    volumes:
+      - ./monitored:/monitored:ro
+      - agent-data:/app/data
+    depends_on:
+      securefim-server:
+        condition: service_healthy
+    networks:
+      - securefim-net
+    restart: unless-stopped
+
+volumes:
+  agent-data:

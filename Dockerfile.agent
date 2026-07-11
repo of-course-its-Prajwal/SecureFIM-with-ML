@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc curl && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY agent/ /app/agent/
+
+RUN mkdir -p /monitored /app/data
+
+ENV SECUREFIM_SERVER=http://securefim-server:8443
+ENV AGENT_CONFIG_FILE=/app/data/agent_config.json
+
+ENTRYPOINT ["python3", "-m", "agent"]
+CMD ["--paths", "/monitored"]
