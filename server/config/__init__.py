@@ -54,3 +54,14 @@ DASHBOARD_REFRESH_MS = int(os.getenv("DASHBOARD_REFRESH_MS", "3000"))
 
 # ── Admin ─────────────────────────────────────────────────────────────────
 ADMIN_PORT = int(os.getenv("ADMIN_PORT", "8444"))
+
+# ── Corroborative threat scoring ──────────────────────────────────────────
+# When True (default), a VOLUMETRIC ransomware rule (mass create / rename /
+# delete / modify) is only credited if the One-Class SVM corroborates it. If the
+# SVM has learned the pattern as normal — e.g. a clerk bulk-importing scanned
+# records — the rule is suppressed and no false alert is raised. Signature-based
+# ransomware evidence (encrypted extension, ransom note) is always trusted.
+#
+# Set to False to reproduce the original purely-additive scoring behaviour,
+# in which the classifier could raise a score but never veto a rule.
+CORROBORATIVE_SCORING = os.getenv("CORROBORATIVE_SCORING", "true").lower() == "true"

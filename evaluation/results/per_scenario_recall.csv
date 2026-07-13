@@ -1,0 +1,9 @@
+attack_scenario,rules_only_detected,full_detected,total,rules_recall,full_recall
+attack_credential_theft,20,20,20,1.0000,1.0000
+attack_inplace_encryption,3,20,20,0.1500,1.0000
+attack_mass_deletion,20,20,20,1.0000,1.0000
+attack_ransomware,20,20,20,1.0000,1.0000
+attack_record_tampering,20,20,20,1.0000,1.0000
+attack_slow_drip_deletion,0,20,20,0.0000,1.0000
+attack_staged_exfil,20,20,20,1.0000,1.0000
+attack_stealth_tampering,0,0,20,0.0000,0.0000

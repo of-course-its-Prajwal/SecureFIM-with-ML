@@ -233,23 +233,64 @@ def get_mitre_tags(event: dict, is_ransomware: bool = False,
 
 # ── Threat Scoring ────────────────────────────────────────────────────────
 
+# Ransomware alerts fall into two classes. SIGNATURE alerts rest on specific
+# evidence — an encrypted extension, a ransom note, an encryption keyword — and
+# are trusted unconditionally. VOLUMETRIC alerts are statistical inferences from
+# event volume ("many creates in a short window"), and legitimate bulk
+# administrative work produces exactly the same volume. Only the volumetric class
+# is subject to corroboration.
+SIGNATURE_ALERT_TITLES = (
+    "Ransomware Extension Detected",
+    "Ransom Note Detected",
+    "Encryption Keyword Detected",
+)
+
+
+def is_volumetric_alert(rw_alert: dict) -> bool:
+    """True if a ransomware alert was inferred from event volume, not a signature."""
+    if not rw_alert:
+        return False
+    return rw_alert.get("title", "") not in SIGNATURE_ALERT_TITLES
+
+
 def calculate_threat_score(event: dict, ml_score: float = 0.0,
                            is_ransomware: bool = False,
                            is_anomaly: bool = False,
                            outside_hours: bool = False,
-                           sensitivity: str = "LOW") -> dict:
+                           sensitivity: str = "LOW",
+                           ransomware_volumetric: bool = False,
+                           corroborative: bool = True) -> dict:
     """
     Calculate a combined threat score (0-100) from multiple signals.
     Higher = more suspicious.
 
-    Scoring logic:
-    - HIGH sensitivity + outside hours = critical (70+)
-    - Ransomware alone = critical
-    - HIGH sensitivity + deletion = critical
-    - ML anomaly + any other signal = critical
+    CORROBORATIVE SCORING
+    ---------------------
+    The scoring model was originally purely additive: every signal could only
+    ADD points, so the anomaly detector could raise a score but never lower one
+    or veto a rule. That made it structurally impossible for machine learning to
+    reduce false positives, because it had no mechanism through which to express
+    disagreement with the rules.
+
+    Under corroborative scoring the classifier is given a veto. A VOLUMETRIC
+    ransomware alert is only credited if the One-Class SVM corroborates it. If
+    the SVM has observed this pattern during training and considers it normal —
+    as it does for a clerk bulk-importing scanned records — the volumetric rule
+    is suppressed and no alert is raised. Signature-based alerts are unaffected.
+
+    Set corroborative=False to reproduce the original additive behaviour.
     """
     score = 0
     reasons = []
+
+    # ── Corroborative gate ────────────────────────────────────────────────
+    ransomware_suppressed = False
+    if (corroborative and is_ransomware
+            and ransomware_volumetric and not is_anomaly):
+        is_ransomware = False
+        ransomware_suppressed = True
+        reasons.append("Volumetric ransomware rule suppressed: "
+                       "anomaly detector considers this pattern normal")
 
     # ML anomaly contribution (0-40 points)
     if is_anomaly:
@@ -305,6 +346,7 @@ def calculate_threat_score(event: dict, ml_score: float = 0.0,
         "score": score,
         "level": level,
         "reasons": reasons,
+        "ransomware_suppressed": ransomware_suppressed,
         "mitre_tags": [{"id": t["id"], "name": t["name"], "tactic": t["tactic"]} for t in mitre_tags],
     }
 

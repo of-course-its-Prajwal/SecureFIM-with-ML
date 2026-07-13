@@ -1,20 +1,6 @@
 """
 SecureFIM Pro — Shared Authentication Module
 
-Provides two security primitives used by BOTH the monitoring API (port 8443)
-and the Admin Panel (port 8444), so credential storage stays consistent:
-
-  1. Salted password hashing (PBKDF2-HMAC-SHA256, 200k iterations, per-user
-     random salt). Replaces the old unsalted SHA-256 scheme. Legacy hashes
-     are still accepted on login and transparently upgraded to the salted
-     format, so existing accounts keep working.
-
-  2. Token-based session authentication. On login the server issues a random
-     bearer token; sensitive admin endpoints require it via the
-     `require_admin` decorator (or a blueprint before_request guard). This
-     closes the hole where admin routes performed no per-request auth check.
-
-Uses only the Python standard library — no new dependencies.
 """
 
 import functools
@@ -32,11 +18,11 @@ from flask import request, jsonify
 
 log = logging.getLogger("securefim.auth")
 
-# ── Credential storage ────────────────────────────────────────────────────
+# Credential storage
 
 ADMIN_CREDS_FILE = os.getenv("ADMIN_CREDS_FILE", "data/admin_credentials.json")
 
-# ── Password hashing (PBKDF2-HMAC-SHA256) ─────────────────────────────────
+#  Password hashing (PBKDF2-HMAC-SHA256)
 
 _PBKDF2_ALGO = "sha256"
 _PBKDF2_ITERATIONS = 200_000
@@ -95,7 +81,7 @@ def verify_password(password: str, stored: str) -> tuple[bool, bool]:
     return False, False
 
 
-# ── User store (shared by both Flask apps) ────────────────────────────────
+#  User store (shared by both Flask apps) 
 
 def load_users() -> dict:
     """Load {username: hashed_password}. Seeds defaults on first run."""
@@ -212,18 +198,36 @@ def require_admin(fn):
     return wrapper
 
 
-def guard_blueprint(public_suffixes: tuple[str, ...]):
+def guard_blueprint(public_suffixes: tuple[str, ...],
+                    protected_contains: Optional[str] = None):
     """
-    Returns a before_request handler that requires a valid token for every
-    route EXCEPT those whose path ends with one of `public_suffixes`
-    (e.g. login / password-reset endpoints) and CORS preflight (OPTIONS).
+    Returns a before_request handler that requires a valid session token.
+
+    protected_contains
+        If given, ONLY paths containing this substring are guarded; every
+        other route on the blueprint is left open. This is what allows the
+        monitoring API blueprint to protect /api/admin/* while leaving the
+        agent and dashboard endpoints (/api/agents/register, /api/events,
+        …) completely unauthenticated, exactly as before.
+        If None, every route on the blueprint is guarded.
+
+    public_suffixes
+        Paths ending with one of these are always open (login and
+        password-reset endpoints), as is any CORS preflight (OPTIONS).
     """
     def _guard():
         if request.method == "OPTIONS":
             return None
         path = request.path.rstrip("/")
+
+        # Outside the protected area → not our business.
+        if protected_contains and protected_contains not in path:
+            return None
+
+        # Public endpoints inside the protected area (login, reset, …).
         if any(path.endswith(s) for s in public_suffixes):
             return None
+
         if current_user() is None:
             return jsonify({"error": "Authentication required"}), 401
         return None

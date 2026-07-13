@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify
 
-from server.config import IDX_EVENTS, IDX_AGENTS, IDX_ANOMALIES, IDX_ALERTS, IDX_HEARTBEATS, AGENT_OFFLINE_THRESHOLD
+from server.config import IDX_EVENTS, IDX_AGENTS, IDX_ANOMALIES, IDX_ALERTS, IDX_HEARTBEATS, AGENT_OFFLINE_THRESHOLD, CORROBORATIVE_SCORING
 
 log = logging.getLogger("securefim.api")
 
@@ -143,6 +143,24 @@ def ingest_events():
     anomalies_found = 0
     ransomware_found = 0
 
+    # ── ML anomaly verdict for the batch, computed FIRST ──────────────────
+    # The One-Class SVM operates on a WINDOW of events, not a single event, so
+    # its verdict must be obtained before individual events are scored. This
+    # verdict is then fed into calculate_threat_score for every event in the
+    # batch, which is what allows the classifier to corroborate — or veto — a
+    # volumetric ransomware rule. (Previously the ML ran after the loop and its
+    # verdict never reached the threat score at all.)
+    batch_is_anomaly = False
+    batch_ml_score = 0.0
+    ml_result = None
+    if ml_detector and events:
+        try:
+            ml_result = ml_detector.predict(events)
+            batch_is_anomaly = bool(ml_result.get("is_anomaly", False))
+            batch_ml_score = float(ml_result.get("score", 0.0))
+        except Exception as exc:
+            log.error("ML prediction error: %s", exc)
+
     for event in events:
         if "timestamp" not in event:
             event["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -157,10 +175,12 @@ def ingest_events():
             else:
                 event["severity"] = "info"
 
-        event["is_anomaly"] = False
-        event["anomaly_score"] = 0.0
+        event["is_anomaly"] = batch_is_anomaly
+        event["anomaly_score"] = batch_ml_score
 
         # ── Ransomware detection (per-event) ──────────────────────────────
+        rw_alert = None
+        rw_is_volumetric = False
         if ransomware_detector:
             try:
                 rw_alert = ransomware_detector.record_event(
@@ -168,6 +188,20 @@ def ingest_events():
                     event.get("file_path", ""),
                     event.get("dest_path", ""),
                 )
+                if rw_alert:
+                    from server.features import is_volumetric_alert
+                    rw_is_volumetric = is_volumetric_alert(rw_alert)
+
+                    # A volumetric rule that the anomaly detector does not
+                    # corroborate is suppressed: no alert, no severity bump.
+                    # Bulk import of scanned records is the case this exists for.
+                    if rw_is_volumetric and not batch_is_anomaly:
+                        log.info(
+                            "Volumetric ransomware rule suppressed (SVM says "
+                            "normal): %s", rw_alert.get("title", "")
+                        )
+                        rw_alert = None
+
                 if rw_alert:
                     ransomware_found += 1
                     event["severity"] = "critical"
@@ -214,11 +248,17 @@ def ingest_events():
             event["outside_hours"] = hours_check.get("outside_hours", False)
             event["hours_reason"] = hours_check.get("reason", "")
 
-            is_rw = ransomware_found > 0 and event.get("severity") == "critical"
+            # rw_alert is None if it was suppressed by the corroborative gate.
+            is_rw = rw_alert is not None
             threat = calculate_threat_score(
-                event, ml_score=0, is_ransomware=is_rw,
-                is_anomaly=False, outside_hours=event.get("outside_hours", False),
+                event,
+                ml_score=batch_ml_score,
+                is_ransomware=is_rw,
+                is_anomaly=batch_is_anomaly,
+                outside_hours=event.get("outside_hours", False),
                 sensitivity=event.get("sensitivity", "LOW"),
+                ransomware_volumetric=rw_is_volumetric,
+                corroborative=CORROBORATIVE_SCORING,
             )
             event["threat_score"] = threat["score"]
             event["threat_level"] = threat["level"]
@@ -288,10 +328,10 @@ def ingest_events():
             except Exception as exc:
                 log.error("Email event alert error: %s", exc)
 
-    # ── ML anomaly detection on the batch ─────────────────────────────────
-    if ml_detector and events:
+    # ── ML anomaly recording (verdict already computed above) ─────────────
+    if ml_detector and events and ml_result is not None:
         try:
-            result = ml_detector.predict(events)
+            result = ml_result
             if result["is_anomaly"]:
                 anomalies_found += 1
                 anomaly_doc = {
@@ -494,11 +534,17 @@ from server.auth import (hash_password as _hash_password, verify_password,
 # Load on startup (shared, salted store)
 ADMIN_USERS = _load_admin_users()
 
-# Guard every /api/admin/* route with token auth. Login/reset stay public.
-api_bp.before_request(guard_blueprint((
-    "/admin/login", "/admin/forgot-password",
-    "/admin/verify-otp", "/admin/reset-password",
-)))
+# Guard ONLY the /api/admin/* routes with token auth.
+# Agent and dashboard endpoints (/api/agents/register, /api/events, /api/health,
+# …) are deliberately left open: agents authenticate at the network layer in
+# this deployment, and changing that is out of scope for this fix.
+api_bp.before_request(guard_blueprint(
+    (
+        "/admin/login", "/admin/forgot-password",
+        "/admin/verify-otp", "/admin/reset-password",
+    ),
+    protected_contains="/admin/",
+))
 
 
 @api_bp.route("/admin/login", methods=["POST"])

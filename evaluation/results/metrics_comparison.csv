@@ -1,0 +1,5 @@
+Configuration,Accuracy,Precision,Recall,F1,FPR,TP,FP,TN,FN
+A. Checksum-only (baseline),0.4444,0.4444,1.0000,0.6154,1.0000,160,200,0,0
+B. Rule-based only,0.7583,0.7744,0.6438,0.7031,0.1500,103,30,170,57
+C. Additive (original),0.8611,0.8235,0.8750,0.8485,0.1500,140,30,170,20
+D. Corroborative (final),0.9222,0.9459,0.8750,0.9091,0.0400,140,8,192,20
