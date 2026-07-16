@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — Admin Server (Port 8444)
+SecureFIM Pro  Admin Server (Port 8444)
 Separate Flask app with sidebar navigation, login, OTP, user management.
 """
 import hashlib,json,logging,os,random,smtplib,threading,time
@@ -418,7 +418,7 @@ def request_restore():
         log.error("Restore request error: %s", exc)
         return jsonify({"error": str(exc)}), 500
 
-# ── Compliance Reports (v7.3) ────────────────────────────────────────────
+#  Compliance Reports (v7.3) 
 @admin_api.route("/reports/generate",methods=["POST"])
 def reports_generate():
     """Generate a PDF compliance report. Body: {period, start?, end?, generated_by?}"""
@@ -483,7 +483,7 @@ def reports_delete(filename):
         log.error("reports_delete failed: %s", exc)
         return jsonify({"error":str(exc)}), 500
 
-# ── Email Alerts (v7.5) ──────────────────────────────────────────────────
+#  Email Alerts (v7.5) 
 @admin_api.route("/email-alerts/status",methods=["GET"])
 def email_alerts_status():
     if not _email_alerter:
@@ -558,7 +558,7 @@ def email_alerts_test():
     ok, msg = _email_alerter.send_test_email(to=to)
     return jsonify({"status":"ok" if ok else "failed", "message":msg})
 
-# ── Baseline Scheduler (v7.6) ────────────────────────────────────────────
+#  Baseline Scheduler (v7.6) 
 @admin_api.route("/scheduler/status",methods=["GET"])
 def scheduler_status():
     if not _scheduler:
