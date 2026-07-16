@@ -30,7 +30,7 @@ import requests
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-# ── Logging ───────────────────────────────────────────────────────────────
+#  Logging 
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,7 +39,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("agent")
 
-# ── Configuration ─────────────────────────────────────────────────────────
+# Configuration 
 
 DEFAULT_SERVER = os.getenv("SECUREFIM_SERVER", "http://localhost:8443")
 DEFAULT_HEARTBEAT = int(os.getenv("AGENT_HEARTBEAT_INTERVAL", "30"))
@@ -52,7 +52,7 @@ def generate_agent_id() -> str:
     return f"{hostname}-{uuid.uuid4().hex[:8]}"
 
 
-# ── File hash helper ──────────────────────────────────────────────────────
+# File hash helper 
 
 def file_hash(path: str, algo: str = "sha256") -> str | None:
     try:
@@ -65,7 +65,7 @@ def file_hash(path: str, algo: str = "sha256") -> str | None:
         return None
 
 
-# ── Watchdog Handler ──────────────────────────────────────────────────────
+#  Watchdog Handler 
 
 class FIMHandler(FileSystemEventHandler):
     """Captures file system events and queues them for batch sending."""
@@ -286,7 +286,7 @@ class FIMHandler(FileSystemEventHandler):
             self._enqueue(self._make_event("MOVED", event.src_path, event.dest_path))
 
 
-# ── Agent ─────────────────────────────────────────────────────────────────
+#  Agent 
 
 class FIMAgent:
     """
@@ -315,7 +315,7 @@ class FIMAgent:
 
         self._load_config()
 
-    # ── Config persistence ────────────────────────────────────────────────
+    #  Config persistence 
 
     def _load_config(self):
         if os.path.exists(CONFIG_FILE):
@@ -342,7 +342,7 @@ class FIMAgent:
         except Exception as exc:
             log.warning("Could not save config: %s", exc)
 
-    # ── Server communication ──────────────────────────────────────────────
+    #  Server communication 
 
     def _post(self, endpoint: str, data: dict | list) -> dict | None:
         url = f"{self.server_url}/api{endpoint}"
@@ -419,7 +419,7 @@ class FIMAgent:
         self._save_config()
         log.info("Updated monitored paths: %s", self.paths)
 
-    # ── Monitoring ────────────────────────────────────────────────────────
+    #  Monitoring 
 
     def _start_observers(self):
         for obs in self.observers:
@@ -654,7 +654,7 @@ class FIMAgent:
         log.info("Agent stopped.")
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────
+#  CLI 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SecureFIM Pro Agent")
