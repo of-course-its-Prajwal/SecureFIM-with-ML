@@ -1,24 +1,5 @@
 """
 SecureFIM Pro — Detector Configurations Under Evaluation
-
-Three configurations are compared on the SAME labelled test set:
-
-  A. CHECKSUM-ONLY  (classical FIM baseline, e.g. Tripwire/AIDE style)
-       Alerts on any detected integrity change. No context, no intelligence.
-       This is the H1 baseline.
-
-  B. RULE-BASED     (SecureFIM Pro with the ML detector disabled)
-       Ransomware signatures + mass-pattern rules + Nepali sensitivity
-       classification + working-hours check + composite threat score.
-       This is the H2 baseline.
-
-  C. FULL SYSTEM    (SecureFIM Pro as deployed)
-       Configuration B plus the One-Class SVM anomaly detector feeding the
-       composite threat score.
-
-Configurations B and C call the PRODUCTION modules directly
-(server.ransomware, server.features, server.ml) — this evaluates the real
-deployed logic rather than a reimplementation of it.
 """
 
 import os
@@ -37,7 +18,7 @@ from server.features import (                             # noqa: E402
 from server.ml import AnomalyDetector                     # noqa: E402
 
 
-# ── A. Checksum-only baseline ────────────────────────────────────────────
+#  A. Checksum-only baseline 
 
 def detect_checksum_only(window):
     """
@@ -56,7 +37,7 @@ def detect_checksum_only(window):
     return False, 0.0
 
 
-# ── Shared scoring core for B and C ──────────────────────────────────────
+#  Shared scoring core for B and C 
 
 def _score_window(window, anomaly_detector=None):
     """
@@ -119,7 +100,7 @@ def detect_full_system(window, anomaly_detector, threshold=70.0):
     return score >= threshold, score
 
 
-# ── ML training helper ───────────────────────────────────────────────────
+#  ML training helper 
 
 def train_anomaly_detector(benign_training_windows):
     """
@@ -149,14 +130,14 @@ def train_anomaly_detector(benign_training_windows):
     return det
 
 
-# ── D. Corroborative scoring (now implemented in production) ─────────────
+# D. Corroborative scoring (now implemented in production) 
 
 from server.features import is_volumetric_alert                # noqa: E402
 
 
 def _score_window_corroborative(window, anomaly_detector):
     """
-    Configuration D — SecureFIM Pro with corroborative scoring.
+    Configuration D  SecureFIM Pro with corroborative scoring.
 
     This calls the SAME production function as Configuration C, with
     corroborative=True, so the evaluation exercises the deployed logic. A
