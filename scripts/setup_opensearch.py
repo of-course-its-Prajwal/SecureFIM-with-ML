@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
-SecureFIM Pro — OpenSearch Index Setup
-Creates all required indices. Run once before first use,
-or the server will create them automatically on startup.
+SecureFIM Pro  OpenSearch Index Setup
 
 Usage:
     python scripts/setup_opensearch.py [--host localhost] [--port 9200]
