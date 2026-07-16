@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — Monitoring Dashboard (Port 8443)
+SecureFIM Pro  Monitoring Dashboard (Port 8443)
 Full feature UI: file audit, watchlist, threat scoring, sensitivity labels,
 MITRE ATT&CK tags, heatmap, working hours, reports, light/dark mode.
 """
@@ -274,7 +274,7 @@ if(i.dataset.p==='heatmap')loadHeatmap();
 function tglTh(){const d=document.documentElement,isL=d.getAttribute('data-theme')==='light';d.setAttribute('data-theme',isL?'':'light');$('thIc').textContent=isL?'🌙':'☀️';$('thTx').textContent=isL?t('btn.dark.txt'):t('btn.light.txt');localStorage.setItem('theme',isL?'dark':'light')}
 if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');$('thIc').textContent='☀️'}
 
-// ── Internationalization (v7.7) ─────────────────────────────────────────
+//  Internationalization (v7.7) 
 const I18N = {
   en: {
     "dsb.subtitle":   "v4.0 Monitoring",
