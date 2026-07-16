@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — Shared Authentication Module
+SecureFIM Pro  Shared Authentication Module
 
 """
 
@@ -131,7 +131,7 @@ def authenticate(users: dict, username: str, password: str) -> bool:
     return ok
 
 
-# ── Token-based session auth ──────────────────────────────────────────────
+#  Token-based session auth 
 
 _TOKEN_TTL_SECONDS = int(os.getenv("ADMIN_TOKEN_TTL", str(8 * 3600)))  # 8 hours
 _tokens: dict[str, dict] = {}     # token -> {"username": str, "expires": float}
