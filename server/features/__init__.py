@@ -1,13 +1,13 @@
 """
-SecureFIM Pro — Advanced Features Module
+SecureFIM Pro  Advanced Features Module
 
-1. File Hash Baseline — snapshot known-good state, compare later
-2. Sensitivity Labels & Watchlist — mark files as HIGH/MEDIUM/LOW
-3. Working Hours Anomaly — flag changes outside business hours
-4. MITRE ATT&CK Mapping — tag detections with technique IDs
-5. Threat Scoring — combine multiple signals into a single score
-6. Data Retention — auto-delete old events
-7. IOC Database — known malicious hashes/extensions
+1. File Hash Baseline  snapshot known-good state, compare later
+2. Sensitivity Labels & Watchlist  mark files as HIGH/MEDIUM/LOW
+3. Working Hours Anomaly flag changes outside business hours
+4. MITRE ATT&CK Mapping  tag detections with technique IDs
+5. Threat Scoring  combine multiple signals into a single score
+6. Data Retention  auto-delete old events
+7. IOC Database  known malicious hashes/extensions
 """
 
 import logging
@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 log = logging.getLogger("securefim.features")
 
-# ── MITRE ATT&CK Mappings ────────────────────────────────────────────────
+#  MITRE ATT&CK Mappings 
 
 MITRE_TECHNIQUES = {
     "ransomware_extension": {
@@ -63,7 +63,7 @@ MITRE_TECHNIQUES = {
     },
 }
 
-# ── IOC Database — Known malicious indicators ─────────────────────────────
+#  IOC Database — Known malicious indicators 
 
 KNOWN_MALICIOUS_HASHES = set()  # Populate from threat feeds in production
 
@@ -137,7 +137,7 @@ SENSITIVE_PATH_PATTERNS = {
 }
 
 
-# ── Working Hours Detection ───────────────────────────────────────────────
+#  Working Hours Detection 
 
 class WorkingHoursDetector:
     """Detects file changes outside configured business hours."""
@@ -176,7 +176,7 @@ class WorkingHoursDetector:
         }
 
 
-# ── Sensitivity Classifier ───────────────────────────────────────────────
+#  Sensitivity Classifier 
 
 def classify_sensitivity(file_path: str) -> str:
     """Classify file sensitivity based on path patterns. Returns HIGH/MEDIUM/LOW."""
@@ -231,14 +231,7 @@ def get_mitre_tags(event: dict, is_ransomware: bool = False,
     return tags
 
 
-# ── Threat Scoring ────────────────────────────────────────────────────────
-
-# Ransomware alerts fall into two classes. SIGNATURE alerts rest on specific
-# evidence — an encrypted extension, a ransom note, an encryption keyword — and
-# are trusted unconditionally. VOLUMETRIC alerts are statistical inferences from
-# event volume ("many creates in a short window"), and legitimate bulk
-# administrative work produces exactly the same volume. Only the volumetric class
-# is subject to corroboration.
+#Threat Scoring 
 SIGNATURE_ALERT_TITLES = (
     "Ransomware Extension Detected",
     "Ransom Note Detected",
@@ -283,7 +276,7 @@ def calculate_threat_score(event: dict, ml_score: float = 0.0,
     score = 0
     reasons = []
 
-    # ── Corroborative gate ────────────────────────────────────────────────
+    #  Corroborative gate 
     ransomware_suppressed = False
     if (corroborative and is_ransomware
             and ransomware_volumetric and not is_anomaly):
@@ -351,7 +344,7 @@ def calculate_threat_score(event: dict, ml_score: float = 0.0,
     }
 
 
-# ── Data Retention ────────────────────────────────────────────────────────
+#  Data Retention 
 
 def apply_retention(os_client, index: str, days: int = 30) -> int:
     """Delete documents older than N days from an index."""
@@ -365,7 +358,7 @@ def apply_retention(os_client, index: str, days: int = 30) -> int:
     return os_client.delete_by_query(index, body)
 
 
-# ── Baseline Functions ────────────────────────────────────────────────────
+#  Baseline Functions 
 
 def compute_file_hash(file_path: str) -> str | None:
     """Compute SHA-256 hash of a file."""
