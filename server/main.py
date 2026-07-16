@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — Server Entry Point
+SecureFIM Pro  Server Entry Point
 Starts TWO servers:
   - Port 8443: Monitoring Dashboard (public, read-only)
   - Port 8444: Admin Panel (restricted, authentication required)
@@ -24,7 +24,7 @@ from server.api import api_bp, init_api
 from server.dashboard import dashboard_bp
 from server.admin import create_admin_app, init_admin
 
-# ── Logging ───────────────────────────────────────────────────────────────
+# Logging 
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
@@ -42,7 +42,7 @@ def create_app() -> tuple:
     CORS(app)
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
-    # ── OpenSearch ────────────────────────────────────────────────────────
+    #  OpenSearch 
     log.info("Connecting to OpenSearch ...")
     os_client = OpenSearchClient()
     if not os_client.wait_for_cluster(retries=30, delay=2):
@@ -50,25 +50,25 @@ def create_app() -> tuple:
         sys.exit(1)
     os_client.ensure_indices()
 
-    # ── ML Anomaly Detection ──────────────────────────────────────────────
+    #  ML Anomaly Detection 
     ml_detector = AnomalyDetector(window_seconds=300)
     log.info("ML anomaly detector ready (trained=%s)", ml_detector.is_trained)
 
-    # ── Ransomware Detection ──────────────────────────────────────────────
+    #  Ransomware Detection 
     rw_detector = RansomwareDetector(detection_window=120)
     log.info("Ransomware detector ready (window=%ds)", rw_detector.detection_window)
 
-    # ── Discord Alerting ──────────────────────────────────────────────────
+    #  Discord Alerting 
     discord_config = os.getenv("DISCORD_CONFIG_FILE", "discord_config.json")
     discord = DiscordAlerter(config_file=discord_config)
     log.info("Discord alerter ready (enabled=%s)", discord.enabled)
 
-    # ── Email Alerting ────────────────────────────────────────────────────
+    # Email Alerting 
     email_alerter = EmailAlerter()
     log.info("Email alerter ready (enabled=%s, recipients=%d)",
              email_alerter.enabled, len(email_alerter.recipients))
 
-    # ── Baseline Scheduler (v7.6) ─────────────────────────────────────────
+    #  Baseline Scheduler (v7.6) 
     from server.features.scheduler import BaselineScheduler
     from server.config import SCHEDULER_TICK_SECONDS
     scheduler = BaselineScheduler(
@@ -79,7 +79,7 @@ def create_app() -> tuple:
     )
     scheduler.start()
 
-    # ── Wire Monitoring API ───────────────────────────────────────────────
+    #  Wire Monitoring API 
     init_api(os_client, ml_detector, socketio,
              ransomware_det=rw_detector,
              discord_alert=discord,
@@ -89,10 +89,10 @@ def create_app() -> tuple:
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
 
-    # ── Wire Admin Server ─────────────────────────────────────────────────
+    #  Wire Admin Server 
     init_admin(os_client, ml_detector, rw_detector, discord, email_alerter, scheduler)
 
-    # ── SocketIO events ───────────────────────────────────────────────────
+    #  SocketIO events 
     @socketio.on("connect")
     def handle_connect():
         log.debug("Dashboard client connected")
