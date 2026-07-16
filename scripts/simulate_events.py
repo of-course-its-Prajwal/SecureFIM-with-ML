@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SecureFIM Pro — Event Simulator
+SecureFIM Pro  Event Simulator
 Simulates agent events for testing the dashboard and anomaly detection.
 
 Usage:
