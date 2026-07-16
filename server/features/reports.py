@@ -1,20 +1,7 @@
 """
-SecureFIM Pro — PDF Compliance Report Generator
-
 Produces auditor-ready PDF reports aligned with Nepal NCSC 102-point
 advisory (Jan 2025) and mapped to the Cyber Kill Chain phases used in
 the thesis theoretical framework.
-
-Report sections:
-  1. Cover page
-  2. Executive summary
-  3. Event breakdown (by type / severity / sensitivity)
-  4. Threat intelligence (top threat scores, MITRE ATT&CK)
-  5. Sensitive file activity (HIGH sensitivity + user attribution)
-  6. Ransomware indicators
-  7. Baseline integrity status
-  8. Agent health summary
-  9. NCSC compliance checklist
 
 Generated PDFs are stored under data/reports/ and listed for re-download.
 """
@@ -61,7 +48,7 @@ CLR_BG_HEADER = colors.HexColor("#eef2f7")
 CLR_BG_ALT = colors.HexColor("#f6f8fa")
 
 
-# ─── Styles ──────────────────────────────────────────────────────────────
+# Styles 
 
 def _styles():
     ss = getSampleStyleSheet()
@@ -87,7 +74,7 @@ def _styles():
     return s
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────
+#  Helpers 
 
 def _fmt_date(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d %H:%M %Z") if dt.tzinfo else dt.strftime("%Y-%m-%d %H:%M UTC")
@@ -153,7 +140,7 @@ def _filename(path, maxlen=32):
     return _truncate(name, maxlen)
 
 
-# ─── Data collection ─────────────────────────────────────────────────────
+#  Data collection 
 
 def _collect_report_data(os_client, start_dt: datetime, end_dt: datetime) -> dict:
     """
@@ -237,7 +224,7 @@ def _summary_numbers(data: dict) -> dict:
     }
 
 
-# ─── PDF Section Builders ────────────────────────────────────────────────
+#  PDF Section Builders 
 
 def _section_cover(story, styles, meta):
     story.append(Spacer(1, 4 * cm))
