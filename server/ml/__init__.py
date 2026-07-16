@@ -1,17 +1,6 @@
 """
-SecureFIM Pro — ML Anomaly Detection (One-Class SVM)
+SecureFIM Pro  ML Anomaly Detection (One-Class SVM)
 
-Feature extraction from FIM event windows:
-  1. event_rate          – events per minute in window
-  2. modify_ratio        – fraction of MODIFIED events
-  3. delete_ratio        – fraction of DELETED events
-  4. create_ratio        – fraction of CREATED events
-  5. unique_paths        – count of distinct file paths
-  6. path_depth_mean     – mean directory depth
-  7. hash_change_rate    – fraction of events with a new hash
-  8. size_std            – standard deviation of file sizes
-  9. burst_score         – max events in any 10-second sub-window
- 10. hour_sin / hour_cos – cyclical time encoding
 """
 
 import os
@@ -119,10 +108,7 @@ def extract_features(events: list[dict], window_seconds: int = 300) -> np.ndarra
 
 
 class AnomalyDetector:
-    """
-    One-Class SVM anomaly detector for FIM events.
-    Operates on time windows of events (default 5 minutes).
-    """
+    
 
     def __init__(self, window_seconds: int = 300):
         self.window_seconds = window_seconds
@@ -136,7 +122,7 @@ class AnomalyDetector:
         os.makedirs(ML_MODEL_DIR, exist_ok=True)
         self._load_model()
 
-    # ── persistence ───────────────────────────────────────────────────────
+    #  persistence 
 
     def _load_model(self):
         try:
@@ -156,7 +142,7 @@ class AnomalyDetector:
         except Exception as exc:
             log.error("Could not save ML model: %s", exc)
 
-    # ── training ──────────────────────────────────────────────────────────
+    #  training 
 
     def add_training_sample(self, events: list[dict]):
         """Add a window of events as a normal training sample."""
@@ -200,7 +186,7 @@ class AnomalyDetector:
         if time.time() - self._last_train_time > ML_RETRAIN_INTERVAL and self.can_train():
             self.train()
 
-    # ── inference ─────────────────────────────────────────────────────────
+    #  inference 
 
     def predict(self, events: list[dict]) -> dict:
         """
@@ -231,7 +217,7 @@ class AnomalyDetector:
 
         return result
 
-    # ── rule-based fallback ───────────────────────────────────────────────
+    #  rule-based fallback 
 
     def _rule_based_detect(self, features: np.ndarray, result: dict) -> dict:
         """
@@ -276,7 +262,7 @@ class AnomalyDetector:
             parts.append(f"hash changes ({features[6]:.0%})")
         return "; ".join(parts)
 
-    # ── status ────────────────────────────────────────────────────────────
+    #  status 
 
     def status(self) -> dict:
         return {
