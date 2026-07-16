@@ -1,12 +1,7 @@
 """
-SecureFIM Pro — Email Alert System
+SecureFIM Pro  Email Alert System
 
-Sends real-time email alerts for critical security events, reusing the
-Gmail SMTP infrastructure already wired for OTP password reset.
-
-Configuration files:
-  data/email_config.json          — SMTP credentials (shared with OTP)
-  data/email_alerts_config.json   — alert-specific settings (this module)
+Sends real-time email alerts for critical security events
 """
 
 import json
@@ -88,7 +83,7 @@ class EmailAlerter:
             log.info("Email alerter idle (enabled=%s, smtp_ready=%s, recipients=%d)",
                      self.enabled, self._smtp_ready(), len(self.recipients))
 
-    # ── config ────────────────────────────────────────────────────────────
+    #  config 
 
     def _load_smtp_config(self) -> dict:
         cfg = _load_json(self.smtp_config_file)
@@ -127,7 +122,7 @@ class EmailAlerter:
     def save_config(self):
         _save_json(self.alerts_config_file, self.config)
 
-    # ── properties ────────────────────────────────────────────────────────
+    #  properties 
 
     @property
     def enabled(self) -> bool:
@@ -152,7 +147,7 @@ class EmailAlerter:
     def _smtp_ready(self) -> bool:
         return bool(self.smtp.get("sender_email") and self.smtp.get("sender_password"))
 
-    # ── public API ────────────────────────────────────────────────────────
+    #  public API 
 
     def send_alert(self, title: str, message: str,
                    severity: str = "info",
@@ -262,7 +257,7 @@ class EmailAlerter:
             return False, "No recipient supplied and no recipients configured"
         try:
             body = self._render_html(
-                title="✅ SecureFIM Pro Email Alert Test",
+                title=" SecureFIM Pro Email Alert Test",
                 message="This is a test email from SecureFIM Pro. "
                         "If you received it, email alerts are working correctly.",
                 severity="info",
@@ -280,7 +275,7 @@ class EmailAlerter:
             log.error("Test email failed: %s", exc)
             return False, f"Failed: {exc}"
 
-    # ── throttling ────────────────────────────────────────────────────────
+    #  throttling 
 
     def _throttle_check(self) -> bool:
         now = time.time()
@@ -289,7 +284,7 @@ class EmailAlerter:
             self._recent_sends.popleft()
         return len(self._recent_sends) < self.throttle_per_minute
 
-    # ── worker ────────────────────────────────────────────────────────────
+    #  worker 
 
     def _process_queue(self):
         while not self._stop:
@@ -315,7 +310,7 @@ class EmailAlerter:
             except Exception as exc:
                 log.error("Email worker error: %s", exc)
 
-    # ── SMTP ──────────────────────────────────────────────────────────────
+    #  SMTP 
 
     def _smtp_send(self, recipient: str, subject: str, html_body: str):
         msg = MIMEMultipart("alternative")
@@ -333,7 +328,7 @@ class EmailAlerter:
             sv.login(self.smtp["sender_email"], self.smtp["sender_password"])
             sv.sendmail(self.smtp["sender_email"], recipient, msg.as_string())
 
-    # ── HTML rendering ────────────────────────────────────────────────────
+    #  HTML rendering 
 
     def _render_html(self, title: str, message: str,
                      severity: str, fields: dict) -> str:
@@ -369,7 +364,7 @@ class EmailAlerter:
   </div>
 </body></html>"""
 
-    # ── status ────────────────────────────────────────────────────────────
+    #  status 
 
     def status(self) -> dict:
         return {
