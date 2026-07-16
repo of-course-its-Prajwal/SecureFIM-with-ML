@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — REST API Routes
+SecureFIM Pro  REST API Routes
 Handles agent registration, event ingestion, path management,
 anomaly results, and dashboard data endpoints.
 """
@@ -39,14 +39,14 @@ def init_api(opensearch_client, anomaly_detector, socketio_instance,
     scheduler_ref = scheduler
 
 
-# ── Health ────────────────────────────────────────────────────────────────
+#  Health 
 
 @api_bp.route("/health")
 def health():
     return jsonify({"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()})
 
 
-# ── Agent Registration ───────────────────────────────────────────────────
+#  Agent Registration 
 
 @api_bp.route("/agents/register", methods=["POST"])
 def register_agent():
@@ -79,7 +79,7 @@ def register_agent():
     return jsonify({"status": "registered", "agent_id": agent_id})
 
 
-# ── Agent Path Management ────────────────────────────────────────────────
+#  Agent Path Management 
 
 @api_bp.route("/agents/<agent_id>/paths", methods=["GET"])
 def get_agent_paths(agent_id):
@@ -107,7 +107,7 @@ def update_agent_paths(agent_id):
     return jsonify({"status": "updated", "monitored_paths": paths})
 
 
-# ── Heartbeat ─────────────────────────────────────────────────────────────
+#  Heartbeat 
 
 @api_bp.route("/agents/<agent_id>/heartbeat", methods=["POST"])
 def agent_heartbeat(agent_id):
@@ -132,7 +132,7 @@ def agent_heartbeat(agent_id):
     return jsonify({"status": "ok"})
 
 
-# ── Event Ingestion ──────────────────────────────────────────────────────
+#  Event Ingestion 
 
 @api_bp.route("/events", methods=["POST"])
 def ingest_events():
@@ -143,13 +143,7 @@ def ingest_events():
     anomalies_found = 0
     ransomware_found = 0
 
-    # ── ML anomaly verdict for the batch, computed FIRST ──────────────────
-    # The One-Class SVM operates on a WINDOW of events, not a single event, so
-    # its verdict must be obtained before individual events are scored. This
-    # verdict is then fed into calculate_threat_score for every event in the
-    # batch, which is what allows the classifier to corroborate — or veto — a
-    # volumetric ransomware rule. (Previously the ML ran after the loop and its
-    # verdict never reached the threat score at all.)
+    
     batch_is_anomaly = False
     batch_ml_score = 0.0
     ml_result = None
@@ -178,7 +172,7 @@ def ingest_events():
         event["is_anomaly"] = batch_is_anomaly
         event["anomaly_score"] = batch_ml_score
 
-        # ── Ransomware detection (per-event) ──────────────────────────────
+        #  Ransomware detection (per-event) 
         rw_alert = None
         rw_is_volumetric = False
         if ransomware_detector:
@@ -192,9 +186,7 @@ def ingest_events():
                     from server.features import is_volumetric_alert
                     rw_is_volumetric = is_volumetric_alert(rw_alert)
 
-                    # A volumetric rule that the anomaly detector does not
-                    # corroborate is suppressed: no alert, no severity bump.
-                    # Bulk import of scanned records is the case this exists for.
+                    
                     if rw_is_volumetric and not batch_is_anomaly:
                         log.info(
                             "Volumetric ransomware rule suppressed (SVM says "
@@ -232,7 +224,7 @@ def ingest_events():
             except Exception as exc:
                 log.error("Ransomware detection error: %s", exc)
 
-        # ── Threat enrichment ─────────────────────────────────────────────
+        #  Threat enrichment 
         try:
             from server.features import classify_sensitivity, calculate_threat_score, get_mitre_tags, WorkingHoursDetector
             from server.config import BUSINESS_HOURS_START, BUSINESS_HOURS_END, BUSINESS_DAYS
@@ -328,7 +320,7 @@ def ingest_events():
             except Exception as exc:
                 log.error("Email event alert error: %s", exc)
 
-    # ── ML anomaly recording (verdict already computed above) ─────────────
+    #  ML anomaly recording (verdict already computed above) 
     if ml_detector and events and ml_result is not None:
         try:
             result = ml_result
@@ -381,7 +373,7 @@ def ingest_events():
     return jsonify({"indexed": indexed, "anomalies": anomalies_found, "ransomware": ransomware_found})
 
 
-# ── Event Queries ─────────────────────────────────────────────────────────
+#  Event Queries 
 
 @api_bp.route("/events/recent")
 def recent_events():
@@ -398,7 +390,7 @@ def event_stats():
     return jsonify(stats)
 
 
-# ── Agents ────────────────────────────────────────────────────────────────
+#  Agents 
 
 @api_bp.route("/agents")
 def list_agents():
@@ -425,7 +417,7 @@ def get_agent_detail(agent_id):
     return jsonify(agent)
 
 
-# ── Anomalies ─────────────────────────────────────────────────────────────
+#  Anomalies 
 
 @api_bp.route("/anomalies")
 def list_anomalies():
@@ -434,7 +426,7 @@ def list_anomalies():
     return jsonify({"anomalies": anomalies})
 
 
-# ── Alerts ────────────────────────────────────────────────────────────────
+#  Alerts 
 
 @api_bp.route("/alerts")
 def list_alerts():
@@ -449,7 +441,7 @@ def acknowledge_alert(alert_id):
     return jsonify({"status": "acknowledged" if ok else "failed"})
 
 
-# ── ML Status ─────────────────────────────────────────────────────────────
+#  ML Status 
 
 @api_bp.route("/ml/status")
 def ml_status():
@@ -472,7 +464,7 @@ def ml_train():
     return jsonify({"status": "trained" if success else "failed"})
 
 
-# ── Dashboard Summary ────────────────────────────────────────────────────
+# Dashboard Summary 
 
 @api_bp.route("/dashboard/summary")
 def dashboard_summary():
@@ -524,7 +516,7 @@ def dashboard_summary():
     })
 
 
-# ── Admin Endpoints ──────────────────────────────────────────────────────
+#  Admin Endpoints 
 
 from server.auth import (hash_password as _hash_password, verify_password,
                          authenticate, load_users as _load_admin_users,
@@ -911,7 +903,7 @@ def admin_export_events():
     events = os_client.get_recent_events(limit=limit)
     return jsonify({"events": events, "exported": len(events)})
 
-# ── Advanced Features API ─────────────────────────────────────────────────
+#  Advanced Features API 
 
 from server.config import IDX_BASELINES, IDX_WATCHLIST, BUSINESS_HOURS_START, BUSINESS_HOURS_END, BUSINESS_DAYS
 from server.features import (
@@ -923,7 +915,7 @@ from server.features import (
 _hours_detector = WorkingHoursDetector(BUSINESS_HOURS_START, BUSINESS_HOURS_END, BUSINESS_DAYS)
 
 
-# ── Watchlist ─────────────────────────────────────────────────────────────
+#  Watchlist 
 
 @api_bp.route("/watchlist", methods=["GET"])
 def get_watchlist():
@@ -956,7 +948,7 @@ def remove_from_watchlist(item_id):
         return jsonify({"error": str(exc)}), 500
 
 
-# ── Baselines ─────────────────────────────────────────────────────────────
+#  Baselines 
 
 @api_bp.route("/baselines", methods=["GET"])
 def get_baselines():
@@ -1040,7 +1032,7 @@ def verify_baseline():
     return jsonify(results)
 
 
-# ── Threat Analysis ───────────────────────────────────────────────────────
+# Threat Analysis 
 
 @api_bp.route("/threat/analyze", methods=["POST"])
 def analyze_threat():
@@ -1102,7 +1094,7 @@ def event_heatmap():
         return jsonify({"error": str(exc)}), 500
 
 
-# ── Data Retention ────────────────────────────────────────────────────────
+#  Data Retention 
 
 @api_bp.route("/admin/retention", methods=["POST"])
 def admin_apply_retention():
@@ -1115,7 +1107,7 @@ def admin_apply_retention():
     return jsonify({"status": "ok", "deleted": results, "retention_days": days})
 
 
-# ── CSV Export ────────────────────────────────────────────────────────────
+#  CSV Export 
 
 @api_bp.route("/admin/export/csv")
 def admin_export_csv():
@@ -1141,7 +1133,7 @@ def admin_export_csv():
     )
 
 
-# ── Restore Request Handling ─────────────────────────────────────────────
+#  Restore Request Handling 
 
 @api_bp.route("/agents/<agent_id>/restore-requests", methods=["GET"])
 def get_restore_requests(agent_id):
@@ -1224,7 +1216,7 @@ def mark_restore_complete(agent_id):
         return jsonify({"error": str(exc)}), 500
 
 
-# ── Baseline Verification (v7.6) ─────────────────────────────────────────
+# Baseline Verification (v7.6) 
 
 @api_bp.route("/agents/<agent_id>/verify-requests", methods=["GET"])
 def get_verify_requests(agent_id):
