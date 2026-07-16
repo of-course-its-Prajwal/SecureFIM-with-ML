@@ -1,30 +1,5 @@
 """
 SecureFIM Pro — Scheduled Baseline Verification
-
-Periodically verifies stored baselines against current file state on each
-agent. Because only agents can hash their own files, the scheduler cannot
-do the work directly — it writes verification requests to a dedicated
-OpenSearch index that agents poll, then compares the returned hashes to
-the baseline and stores a result document.
-
-Flow:
-  1. Scheduler thread ticks every SCHEDULER_TICK_SECONDS.
-  2. For each schedule that's due (next_verify_at <= now and enabled),
-     create a document in fim-verify-requests with status="pending".
-  3. Agent's verify-loop polls /api/agents/<id>/verify-requests, finds it,
-     re-hashes all files from the baseline, POSTs to verify-complete.
-  4. The verify-complete handler in server/api calls
-     scheduler.record_verification_result() to compute the integrity
-     score, write to fim-verify-results, and fire alerts on drift.
-
-Schedule config is stored on the baseline document itself as new fields:
-  schedule_enabled    (bool)
-  schedule_frequency  ("hourly" | "daily" | "weekly" | "custom")
-  schedule_interval_minutes  (int, used when frequency == "custom")
-  schedule_next_at    (ISO timestamp)
-  schedule_last_at    (ISO timestamp)
-
-We also update the baseline's last_verified when results come in.
 """
 
 import logging
@@ -89,7 +64,7 @@ class BaselineScheduler:
         # Avoid duplicate enqueues for the same baseline within one tick window
         self._inflight: set[str] = set()
 
-    # ── lifecycle ─────────────────────────────────────────────────────────
+    #  lifecycle 
 
     def start(self):
         if self._thread and self._thread.is_alive():
@@ -103,7 +78,7 @@ class BaselineScheduler:
     def stop(self):
         self._stop = True
 
-    # ── main loop ─────────────────────────────────────────────────────────
+    #  main loop 
 
     def _run(self):
         # Small grace period so OpenSearch indices are fully ready
@@ -158,7 +133,7 @@ class BaselineScheduler:
         if due_count:
             log.info("Scheduler enqueued %d verification(s)", due_count)
 
-    # ── helpers: baseline querying ────────────────────────────────────────
+    # helpers: baseline querying 
 
     def _list_scheduled_baselines(self) -> list[dict]:
         """
@@ -227,7 +202,7 @@ class BaselineScheduler:
         except Exception as exc:
             log.warning("update_schedule_fields(%s) failed: %s", baseline_name, exc)
 
-    # ── public: enqueue + record result ───────────────────────────────────
+    #  public: enqueue + record result 
 
     def _enqueue_verification(self, baseline_name: str, agent_id: str,
                               scheduled: bool = True,
@@ -340,7 +315,7 @@ class BaselineScheduler:
 
         return result_doc
 
-    # ── alerting ──────────────────────────────────────────────────────────
+    #  alerting 
 
     def _fire_drift_alerts(self, result: dict):
         baseline = result.get("baseline_name", "?")
@@ -405,7 +380,7 @@ class BaselineScheduler:
         log.warning("Baseline drift alert fired: %s (integrity=%.1f%%)",
                     baseline, score)
 
-    # ── public: schedule config API ───────────────────────────────────────
+    #  public: schedule config API 
 
     def set_schedule(self, baseline_name: str, *,
                      enabled: bool,
