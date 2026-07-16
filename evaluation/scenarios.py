@@ -1,23 +1,5 @@
 """
-SecureFIM Pro — Evaluation Dataset Generator
-
-Produces LABELLED windows of file-integrity events with known ground truth,
-so detector output can be scored against a confusion matrix.
-
-Design notes (important for the thesis write-up):
-
-  * The unit of classification is an EVENT WINDOW (a burst of activity over a
-    short period), not a single event. This matches how the One-Class SVM
-    actually operates in SecureFIM Pro (server/ml extract_features works on
-    windows), so the evaluation measures the deployed system, not a proxy.
-
-  * The BENIGN class deliberately includes HARD cases — a legitimate bulk
-    import of records, and legitimate edits to HIGH-sensitivity government
-    files during office hours. Without these, the false-positive rate would
-    be artificially near zero and the evaluation would be worthless. These
-    cases are what a rule-only detector tends to get wrong, and they are
-    the basis of the H2 comparison.
-
+SecureFIM Pro  Evaluation Dataset Generator
   * All data is synthetic. No real citizen records are used.
 """
 
@@ -25,7 +7,7 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# ── File universe (mirrors the DAO Bhaktapur use case) ───────────────────
+# File universe (mirrors the DAO Bhaktapur use case) 
 
 SENSITIVE_FILES = [
     "records/citizenship/nagarikta_{n}.pdf",
@@ -103,7 +85,7 @@ def _after_hours(rng, day_offset=0):
                         second=rng.randint(0, 59))
 
 
-# ══ BENIGN SCENARIOS ═════════════════════════════════════════════════════
+# BENIGN SCENARIOS 
 
 def benign_routine_edit(rng, d):
     """Staff editing ordinary office documents during work hours."""
@@ -163,7 +145,7 @@ def benign_sensitive_workhours(rng, d):
     return evs, "benign_sensitive_workhours"
 
 
-# ══ MALICIOUS SCENARIOS ══════════════════════════════════════════════════
+#  MALICIOUS SCENARIOS 
 
 def attack_ransomware(rng, d):
     """Mass encryption: files renamed to encrypted extensions + ransom note."""
