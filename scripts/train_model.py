@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SecureFIM Pro — ML Training Data Generator
+SecureFIM Pro  ML Training Data Generator
 Generates synthetic normal FIM events and trains the One-Class SVM model.
 
 Usage:
