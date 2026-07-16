@@ -1,22 +1,9 @@
 """
-SecureFIM Pro — Discord Alert System
+SecureFIM Pro  Discord Alert System
 
 Sends real-time alerts to Discord channels via bot token or user token.
 Supports embeds with colour coding by severity, queued sending with rate limiting.
 
-Configuration file: discord_config.json
-{
-    "enabled": true,
-    "bot_token": "YOUR_TOKEN_HERE",
-    "channels": { "alerts": "CHANNEL_ID" },
-    "default_channel": "alerts",
-    "token_type": "user",        // "user" or "bot"
-    "alert_levels": {
-        "CRITICAL": true, "WARNING": true, "INFO": false,
-        "ANOMALY": true, "RANSOMWARE": true
-    },
-    "ping_on_critical": true
-}
 """
 
 import json
@@ -75,7 +62,7 @@ class DiscordAlerter:
             log.info("Discord alerter disabled (enabled=%s, token=%s)",
                      self.enabled, bool(self.bot_token))
 
-    # ── config ────────────────────────────────────────────────────────────
+    #  config 
 
     def _load_config(self) -> dict:
         default = {
@@ -108,7 +95,7 @@ class DiscordAlerter:
         except Exception as exc:
             log.error("Could not save Discord config: %s", exc)
 
-    # ── public API ────────────────────────────────────────────────────────
+    #  public API 
 
     def send_alert(self, title: str, message: str,
                    severity: str = "info",
@@ -190,7 +177,7 @@ class DiscordAlerter:
             },
         )
 
-    # ── internals ─────────────────────────────────────────────────────────
+    #  internals 
 
     def _build_embed(self, title: str, description: str,
                      severity: str, fields: Optional[dict] = None) -> dict:
@@ -247,7 +234,7 @@ class DiscordAlerter:
             self._send_message(item["channel_id"], item["payload"])
             self._last_sent = time.time()
 
-    # ── status ────────────────────────────────────────────────────────────
+    #  status 
 
     def status(self) -> dict:
         return {
