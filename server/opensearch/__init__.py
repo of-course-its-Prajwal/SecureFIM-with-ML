@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — OpenSearch Client
+SecureFIM Pro  OpenSearch Client
 Handles connection, index creation, and all document operations.
 """
 
@@ -18,7 +18,7 @@ from server.config import (
 
 log = logging.getLogger("securefim.opensearch")
 
-# ── Index mappings ────────────────────────────────────────────────────────
+#  Index mappings 
 
 MAPPINGS = {
     IDX_EVENTS: {
@@ -213,7 +213,7 @@ class OpenSearchClient:
         )
         self._ready = False
 
-    # ── lifecycle ─────────────────────────────────────────────────────────
+    #  lifecycle 
 
     def wait_for_cluster(self, retries: int = 30, delay: float = 2.0) -> bool:
         for attempt in range(1, retries + 1):
@@ -228,9 +228,7 @@ class OpenSearchClient:
         log.error("OpenSearch not reachable after %d attempts", retries)
         return False
 
-    # Critical keyword fields per index — if any are mistyped as text in the
-    # live mapping, terms aggregations silently break (this is the v7.2 bug).
-    # On startup we validate these and auto-repair by reindex + swap.
+    
     _CRITICAL_KEYWORDS = {
         IDX_EVENTS: [
             "event_type", "severity", "agent_id", "hostname", "os_type",
@@ -333,7 +331,7 @@ class OpenSearchClient:
                 if "resource_already_exists_exception" not in str(exc):
                     log.error("Error creating index %s: %s", name, exc)
 
-    # ── generic CRUD ──────────────────────────────────────────────────────
+    #  generic CRUD 
 
     def index_doc(self, index: str, body: dict, doc_id: str = None) -> str | None:
         try:
@@ -390,7 +388,7 @@ class OpenSearchClient:
             log.error("delete_by_query(%s) failed: %s", index, exc)
             return 0
 
-    # ── convenience queries ───────────────────────────────────────────────
+    #  convenience queries 
 
     def get_recent_events(self, limit: int = 50, agent_id: str = None) -> list[dict]:
         query: dict = {"match_all": {}}
