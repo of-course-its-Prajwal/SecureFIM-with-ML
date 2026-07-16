@@ -1,5 +1,5 @@
 """
-SecureFIM Pro — Ransomware Detection Module
+SecureFIM Pro  Ransomware Detection Module
 
 Detects ransomware activity through:
   - Suspicious file extensions (.encrypted, .locked, .cerber, etc.)
@@ -55,7 +55,7 @@ class RansomwareDetector:
         self.recent_deletes: deque = deque(maxlen=500)
         self.recent_modifies: deque = deque(maxlen=500)
 
-    # ── single-event checks ───────────────────────────────────────────────
+    #  single-event checks 
 
     def check_extension(self, file_path: str) -> Optional[str]:
         """Return suspicious extension or None."""
@@ -97,7 +97,7 @@ class RansomwareDetector:
             pass
         return None
 
-    # ── pattern-based (mass activity) ─────────────────────────────────────
+    #  pattern-based (mass activity) 
 
     def _clean(self, q: deque):
         cutoff = time.time() - self.detection_window
